@@ -1,0 +1,7 @@
+-- Seed data is intentionally omitted.
+--
+-- Wishes must be submitted through public.submit_wish_atomic()
+-- so that validation, rate limiting, and submission metadata are applied.
+--
+-- Do not insert placeholder wishes here because this file may be executed
+-- repeatedly during local database resets.
