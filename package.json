@@ -1,0 +1,38 @@
+{
+  "name": "hope-company-monorepo",
+  "private": true,
+  "packageManager": "pnpm@11.10.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo dev --filter=@hope/web",
+    "build": "turbo build",
+    "check": "turbo check",
+    "test": "turbo test",
+    "lint": "eslint . --max-warnings=0",
+    "format": "prettier --write .",
+    "ci": "pnpm security:repo && pnpm security:dependencies && pnpm lint && pnpm check && pnpm test && pnpm build && pnpm validate && pnpm audit",
+    "lighthouse": "lhci autorun",
+    "validate": "html-validate apps/web/.vercel/output/static/index.html",
+    "audit": "pnpm audit --audit-level high",
+    "security:repo": "node scripts/check-repo-safety.mjs",
+    "security:dependencies": "node scripts/check-dependency-policy.mjs",
+    "lint:fix": "eslint . --fix --max-warnings=0"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.2",
+    "@lhci/cli": "0.15.1",
+    "eslint": "9.39.2",
+    "eslint-plugin-astro": "1.7.0",
+    "eslint-plugin-promise": "7.3.0",
+    "eslint-plugin-security": "4.0.1",
+    "eslint-plugin-sonarjs": "4.2.0",
+    "globals": "17.7.0",
+    "html-validate": "11.5.6",
+    "prettier": "3.9.5",
+    "turbo": "2.10.5",
+    "typescript": "5.8.3",
+    "typescript-eslint": "8.64.0"
+  }
+}

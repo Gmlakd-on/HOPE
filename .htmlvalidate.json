@@ -1,0 +1,12 @@
+{
+  "extends": ["html-validate:recommended"],
+  "rules": {
+    "no-inline-style": "off",
+    "wcag/h63": "off",
+    "prefer-button": "off",
+    "no-dup-class": "off",
+    "attribute-empty-style": "off",
+    "attribute-boolean-style": "off",
+    "hidden-focusable": "off"
+  }
+}

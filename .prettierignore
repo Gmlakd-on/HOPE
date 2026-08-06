@@ -1,0 +1,38 @@
+# Dependencies and package-manager state
+node_modules/
+.pnpm-store/
+pnpm-lock.yaml
+
+# Build, deployment, and framework output
+**/dist/
+**/.astro/
+**/.vercel/
+**/.netlify/
+**/.wrangler/
+**/.output/
+**/.next/
+**/.nuxt/
+**/.svelte-kit/
+**/.vite/
+**/.cache/
+**/.turbo/
+
+# Test and quality reports
+**/coverage/
+**/.nyc_output/
+**/.vitest/
+**/playwright-report/
+**/test-results/
+**/blob-report/
+**/.lighthouseci/
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+supabase/.supabase/
+
+# Logs and temporary files
+**/logs/
+*.log
+**/tmp/
+**/temp/
