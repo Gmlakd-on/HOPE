@@ -1,0 +1,442 @@
+---
+import "../styles/global.css";
+import { MAX_WISH_LENGTH } from "@hope/wishes-domain";
+import {
+  DEFAULT_PRODUCT_NOTICES,
+  DEFAULT_PRODUCTS,
+} from "../lib/product-defaults";
+import {
+  APPLE_TOUCH_ICON_PATH,
+  BRAND_LOGO_PATH,
+  FAVICON_PATH,
+  OG_IMAGE_HEIGHT,
+  OG_IMAGE_PATH,
+  OG_IMAGE_WIDTH,
+  SITE_BRAND,
+  SITE_DESCRIPTION_KO,
+  SITE_TITLE_KO,
+  SITE_URL_FALLBACK,
+} from "../config/site";
+import { productImageAttributes } from "../lib/product-images";
+
+export const prerender = true;
+const project001Url = import.meta.env.PUBLIC_PROJECT_001_URL || "/p1";
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || "";
+const siteUrl = (import.meta.env.PUBLIC_SITE_URL || SITE_URL_FALLBACK).replace(/\/$/, "");
+const canonicalUrl = `${siteUrl}/`;
+const ogImageUrl = `${siteUrl}${OG_IMAGE_PATH}`;
+const instagramUrl = import.meta.env.PUBLIC_INSTAGRAM_URL || "https://instagram.com/";
+const contactEmail = import.meta.env.PUBLIC_CONTACT_EMAIL || "hello@hiddenpage.co.kr";
+const companyFoundedDate =
+  import.meta.env.PUBLIC_COMPANY_FOUNDED_DATE || "2026-07-14";
+const products = DEFAULT_PRODUCTS;
+const productCards = products.map((product) => ({
+  product,
+  image: productImageAttributes(product.imageUrl, "card"),
+}));
+---
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={SITE_DESCRIPTION_KO} />
+    <meta name="theme-color" content="#10191b" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href={FAVICON_PATH} type="image/png" sizes="128x128" />
+    <link rel="apple-touch-icon" href={APPLE_TOUCH_ICON_PATH} sizes="180x180" />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin="anonymous" />
+    {turnstileSiteKey && (
+      <>
+        <link rel="dns-prefetch" href="https://challenges.cloudflare.com" />
+        <link rel="preconnect" href="https://challenges.cloudflare.com" crossorigin="anonymous" />
+      </>
+    )}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={SITE_TITLE_KO} />
+    <meta property="og:description" content={SITE_DESCRIPTION_KO} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:site_name" content={SITE_BRAND} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:secure_url" content={ogImageUrl} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content={String(OG_IMAGE_WIDTH)} />
+    <meta property="og:image:height" content={String(OG_IMAGE_HEIGHT)} />
+    <meta property="og:image:alt" content={`${SITE_BRAND} 로고`} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={SITE_TITLE_KO} />
+    <meta name="twitter:description" content={SITE_DESCRIPTION_KO} />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <title>{SITE_TITLE_KO}</title>
+  </head>
+  <body class="intro-active">
+<a class="skip-link" href="#main">본문 바로가기</a>
+
+<section aria-label={`${SITE_BRAND} 시작 화면`} class="intro-screen" id="introScreen">
+<header class="intro-header">
+<span class="intro-brand"><img alt="" class="intro-brand-logo" decoding="async" height="52" src={BRAND_LOGO_PATH} width="61" /></span>
+<button aria-controls="aboutModal" aria-haspopup="dialog" aria-label="회사 소개 편지 열기" class="letter-button intro-letter-button" id="introAboutOpen" type="button">
+<svg aria-hidden="true" fill="none" viewBox="0 0 22 16">
+<rect height="15" stroke="currentColor" width="21" x="0.5" y="0.5"></rect>
+<path d="M1 1 L11 9 L21 1" stroke="currentColor"></path>
+</svg>
+</button>
+</header>
+<button aria-label={`중앙의 물결을 열어 ${SITE_BRAND} 홈페이지 보기`} class="intro-water-target" id="introWaterTarget" type="button">
+<span aria-hidden="true" class="intro-water-core"></span>
+<span aria-hidden="true" class="intro-water-dot"></span>
+<span aria-hidden="true" class="intro-drop"></span>
+<span class="visually-hidden">{SITE_BRAND} 홈페이지 열기</span>
+</button>
+</section>
+
+<div aria-hidden="true" class="intro-reveal-ripples" id="introRevealRipples">
+<span class="intro-impact"></span>
+<span class="water-refraction"></span>
+<span class="lake-ring"></span>
+<span class="lake-ring"></span>
+<span class="lake-ring"></span>
+<span class="lake-ring"></span>
+<span class="lake-ring"></span>
+</div>
+
+<div aria-hidden="true" class="cupid-cursor" id="cupidCursor">
+<svg fill="none" viewBox="0 0 30 58">
+<path d="M15 5V50" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"></path>
+<path d="M8 43L15 52L22 43" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+<path d="M15 11C11.4 7.2 8.8 2.5 12.6 1.7C15.8 1.1 18.8 5.2 15 11Z" fill="currentColor" opacity=".92"></path>
+<path d="M15 11C18.6 7.2 21.2 2.5 17.4 1.7C14.2 1.1 11.2 5.2 15 11Z" fill="currentColor" opacity=".72"></path>
+<path d="M11 17L15 22L19 17" opacity=".75" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2"></path>
+</svg>
+</div>
+
+<div aria-hidden="true" class="wish-bubble-layer" id="wishBubbleLayer"></div>
+
+<div class="site" id="siteRoot">
+<header class="site-header">
+<button aria-label={`${SITE_BRAND} 홈으로 이동`} class="brand" data-route="home" type="button">
+<img alt="" class="brand-logo" decoding="async" height="52" src={BRAND_LOGO_PATH} width="61" />
+<span class="visually-hidden">{SITE_BRAND}</span>
+</button>
+<nav aria-label="프로젝트 아카이브 카테고리" class="header-category-nav">
+<button aria-selected="false" class="category-button" data-route="digital" type="button">서비스</button>
+<button aria-selected="false" class="category-button" data-route="stories" type="button">콘텐츠</button>
+<button aria-selected="false" class="category-button" data-route="objects" type="button">제품</button>
+</nav>
+<div class="header-actions">
+<div aria-label="언어 선택" class="language-switch" role="group">
+<button aria-pressed="true" class="language-button is-active" data-lang="ko" type="button">KO</button>
+<span aria-hidden="true">/</span>
+<button aria-pressed="false" class="language-button" data-lang="en" type="button">EN</button>
+</div>
+<button aria-controls="aboutModal" aria-haspopup="dialog" aria-label="회사 소개 편지 열기" class="letter-button" id="aboutOpen" type="button">
+<svg aria-hidden="true" fill="none" viewBox="0 0 22 16">
+<rect height="15" stroke="currentColor" width="21" x="0.5" y="0.5"></rect>
+<path d="M1 1 L11 9 L21 1" stroke="currentColor"></path>
+</svg>
+</button>
+</div>
+</header>
+<main class="main" id="main" tabindex="-1">
+<div class="view-stack">
+<section aria-labelledby="homeTitle" class="view home-view is-active" data-view="home" id="homeView">
+<h1 class="tagline" id="homeTitle"><span class="tagline-line">입고, 쓰고, 읽는</span><span class="tagline-line tagline-line--indent">오늘의 희망</span></h1>
+<span aria-hidden="true" class="hero-rule"></span>
+<div class="wish-intro">
+<div
+  aria-live="polite"
+  class="home-stats"
+  data-company-founded-date={companyFoundedDate}
+  id="homeStats"
+>
+  <span id="wishTotalStat">소원 수 확인 중</span>
+  <span aria-hidden="true" class="home-stats-divider">/</span>
+  <span id="companyDayStat">회사 설립 D+ 계산 중</span>
+</div>
+<p class="wish-question">당신이 지금 바라는 것은 무엇인가요?</p>
+<button aria-controls="wishModal" aria-haspopup="dialog" class="wish-open-button" id="wishOpen" type="button">
+              소원 남기기 <span aria-hidden="true">↗</span>
+</button>
+</div>
+</section>
+<section aria-labelledby="digitalTitle" class="view archive-view" data-view="digital" hidden="" id="digitalView">
+<div class="archive-shell">
+<header class="archive-heading archive-heading--intro-only">
+<div class="archive-title-wrap">
+<h2 class="archive-title visually-hidden" id="digitalTitle">서비스</h2>
+<p class="archive-description"><span aria-hidden="true" class="archive-quote">“</span><span class="archive-description-copy"><span class="archive-description-line">건강한 삶을 지속할 수 있는 디지털 기반을</span><span class="archive-description-line">만듭니다</span></span><span aria-hidden="true" class="archive-quote">”</span></p>
+</div>
+</header>
+<ol aria-label="서비스 프로젝트 목록" class="project-list">
+<li class="project-item">
+<a aria-label="프로젝트 001 참 잘했어요 서비스 새 창에서 접속" class="project-link" href={project001Url} id="serviceLink" rel="noopener noreferrer" target="_blank">
+<span class="project-number">Project 001</span>
+<span class="project-main">
+<span class="project-meta">
+<span class="project-status project-status--new">NEW</span>
+<span class="project-availability">앱 출시 준비중</span>
+</span>
+<span class="project-title">참 잘했어요</span>
+<span class="project-description">일상 기록, 나를 알아가는 라이프스타일 서비스</span>
+</span>
+<span class="project-cta">
+<span class="project-cta-label">서비스 사이트 보기</span>
+<span aria-hidden="true" class="project-cta-arrow">↗</span>
+</span>
+</a>
+</li>
+</ol>
+
+</div>
+</section>
+<section aria-labelledby="storiesTitle" class="view archive-view" data-view="stories" hidden="" id="storiesView">
+<div class="archive-shell">
+<header class="archive-heading archive-heading--intro-only">
+<div class="archive-title-wrap">
+<h2 class="archive-title visually-hidden" id="storiesTitle">콘텐츠</h2>
+<p class="archive-description"><span aria-hidden="true" class="archive-quote">“</span><span class="archive-description-copy"><span class="archive-description-line">사람과 사회에 필요한 관점을 담은</span><span class="archive-description-line">콘텐츠를 제작합니다</span></span><span aria-hidden="true" class="archive-quote">”</span></p>
+</div>
+</header>
+<div class="empty-state">
+<span class="project-number">Archive</span>
+<p>현재 공개 중인 프로젝트가 없습니다.</p>
+</div>
+
+</div>
+</section>
+<section aria-labelledby="objectsTitle" class="view archive-view" data-view="objects" hidden="" id="objectsView">
+<div class="archive-shell product-archive-shell">
+<header class="archive-heading archive-heading--intro-only">
+<div class="archive-title-wrap">
+<h2 class="archive-title visually-hidden" id="objectsTitle">제품</h2>
+<p class="archive-description"><span aria-hidden="true" class="archive-quote">“</span><span class="archive-description-copy"><span class="archive-description-line">희망의 가치를 담은 실용적인 제품을</span><span class="archive-description-line">만듭니다</span></span><span aria-hidden="true" class="archive-quote">”</span></p>
+</div>
+</header>
+<div class="product-grid" id="productGrid">
+{productCards.map(({ product, image }) => (
+<button
+  aria-label={`[${product.badge}] ${product.name} 상세 정보 보기`}
+  class="product-card"
+  data-product-id={product.id}
+  data-product-json={JSON.stringify(product)}
+  type="button"
+>
+  <img
+    alt={product.altText}
+    decoding="async"
+    height={image.height}
+    loading="lazy"
+    sizes={image.sizes}
+    src={image.src}
+    srcset={image.srcSet}
+    width={image.width}
+  />
+  <span class="product-card-copy">
+    <span class="product-card-badge">[{product.badge}]</span>
+    <strong class="product-card-name">{product.name}</strong>
+    <span class="product-card-price">{new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(product.priceKrw)}</span>
+  </span>
+</button>
+))}
+</div>
+</div>
+</section>
+</div>
+</main>
+<footer class="site-footer">
+<span class="footer-copyright">© 2026 {SITE_BRAND}</span>
+<span aria-label={`${SITE_BRAND} 연락처`} class="footer-contact" role="group">
+<a aria-label={`${SITE_BRAND} Instagram 열기`} class="footer-icon-link" href={instagramUrl} rel="noopener noreferrer" target="_blank" title="Instagram">
+<svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+<rect height="17" rx="5" stroke="currentColor" stroke-width="1.5" width="17" x="3.5" y="3.5"></rect>
+<circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5"></circle>
+<circle cx="17.4" cy="6.8" fill="currentColor" r="1"></circle>
+</svg>
+</a>
+<span class="footer-email-wrap">
+<button
+  aria-controls="footerEmailPopover"
+  aria-expanded="false"
+  aria-label={`${SITE_BRAND} 이메일 주소 보기`}
+  class="footer-icon-link footer-email-link"
+  id="footerEmailToggle"
+  title="Email"
+  type="button"
+>
+<svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+<rect height="15" rx="2.5" stroke="currentColor" stroke-width="1.5" width="19" x="2.5" y="4.5"></rect>
+<path d="M3.5 6L12 13L20.5 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+</svg>
+</button>
+<div aria-label="이메일 주소" class="footer-email-popover" hidden id="footerEmailPopover" role="group">
+<span class="footer-email-address" id="footerEmailAddress">{contactEmail}</span>
+<button
+  aria-label="이메일 주소 복사"
+  class="footer-email-copy"
+  data-email={contactEmail}
+  id="footerEmailCopy"
+  title="Copy email"
+  type="button"
+>
+<svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+<rect height="12" rx="2" stroke="currentColor" stroke-width="1.5" width="12" x="8" y="8"></rect>
+<path d="M16 8V6A2 2 0 0 0 14 4H6A2 2 0 0 0 4 6V14A2 2 0 0 0 6 16H8" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"></path>
+</svg>
+</button>
+<span aria-live="polite" class="visually-hidden" id="footerEmailCopyStatus"></span>
+</div>
+</span>
+</span>
+</footer>
+</div>
+
+<div aria-hidden="true" aria-labelledby="aboutTitle" aria-modal="true" class="modal" id="aboutModal" inert role="dialog">
+<button aria-label="회사 소개 닫기" class="modal-backdrop" tabindex="-1" type="button"></button>
+<div class="letter-scene">
+<article class="letter-paper" tabindex="-1">
+<button aria-label="회사 소개 닫기" class="letter-close" id="aboutClose" type="button">✕</button>
+<div class="letter-copy">
+<p id="aboutTitle">어둠을 알기에, 우리는 희망을 만듭니다.</p>
+<p id="aboutLead">HOPE는 희망을 막연한 낙관이 아닌, 작은 마음과 행동이 쌓여 삶과 세상을 변화시키는 과정이라 믿습니다.</p>
+<p id="aboutPillars">우리는 희망을 서비스로 경험하게 하고, 콘텐츠로 나누며<br /> 제품으로 일상에 남깁니다.</p>
+<p id="aboutClosing">서로를 살피는 마음이 다시 나에게 돌아오는 세상을 향해,<br /> 한 걸음씩 나아가겠습니다.</p>
+<p id="aboutSupport">앞으로 이어질 HOPE의 발자취에 따뜻한 관심과 응원으로<br /> 함께해 주세요.</p>
+<p id="aboutThanks">감사합니다.</p>
+<p id="aboutSignoff">대표 김지은</p>
+</div>
+</article>
+<div aria-hidden="true" class="envelope-base"></div>
+<div aria-hidden="true" class="envelope-fold"></div>
+</div>
+</div>
+
+<div aria-hidden="true" aria-labelledby="productModalName" aria-modal="true" class="modal product-modal" id="productModal" inert role="dialog">
+<button aria-label="상품 상세 닫기" class="modal-backdrop" tabindex="-1" type="button"></button>
+<div class="product-dialog-wrap">
+<article class="letter-paper product-dialog" tabindex="-1">
+<button aria-label="상품 상세 닫기" class="letter-close" id="productClose" type="button">✕</button>
+<div class="product-dialog-media">
+<img alt="" decoding="async" id="productModalImage" src="" />
+</div>
+<div class="product-dialog-copy">
+<p class="product-modal-badge" id="productModalBadge"></p>
+<h2 class="product-modal-name" id="productModalName"></h2>
+<p class="product-modal-price" id="productModalPrice"></p>
+<p class="product-modal-description" id="productModalDescription"></p>
+<div class="product-modal-note">
+<strong id="productDonationTitle">기부 안내</strong>
+<p id="productCatalogDonation">{DEFAULT_PRODUCT_NOTICES.donationNote}</p>
+</div>
+<div class="product-modal-note product-modal-note--inquiry">
+<strong id="productInquiryTitle">구매 안내</strong>
+<p id="productCatalogInquiry">{DEFAULT_PRODUCT_NOTICES.inquiryNote}</p>
+<div class="product-contact-row">
+<span id="productContactLabel">관련 문의 :</span>
+<span class="product-contact-icons" role="group" aria-label="상품 문의 채널">
+<a
+  aria-label="Instagram으로 문의하기"
+  class="footer-icon-link product-contact-icon"
+  href={instagramUrl}
+  id="productInstagramLink"
+  rel="noopener noreferrer"
+  target="_blank"
+  title="Instagram"
+>
+<svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+<rect height="17" rx="5" stroke="currentColor" stroke-width="1.5" width="17" x="3.5" y="3.5"></rect>
+<circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5"></circle>
+<circle cx="17.4" cy="6.8" fill="currentColor" r="1"></circle>
+</svg>
+</a>
+<a
+  aria-label="Email로 문의하기"
+  class="footer-icon-link product-contact-icon"
+  href={`mailto:${contactEmail}`}
+  id="productEmailLink"
+  title="Email"
+>
+<svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+<rect height="15" rx="2.5" stroke="currentColor" stroke-width="1.5" width="19" x="2.5" y="4.5"></rect>
+<path d="M3.5 6L12 13L20.5 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+</svg>
+</a>
+</span>
+</div>
+</div>
+</div>
+</article>
+</div>
+</div>
+
+<div aria-hidden="true" aria-labelledby="wishTitle" aria-modal="true" class="modal" id="wishModal" inert role="dialog">
+<button aria-label="소원 작성 닫기" class="modal-backdrop" tabindex="-1" type="button"></button>
+<div class="letter-scene">
+<article class="letter-paper wish-paper" tabindex="-1">
+<button aria-label="소원 작성 닫기" class="letter-close" id="wishClose" type="button">✕</button>
+<form class="wish-form" id="wishForm" data-endpoint="/api/wishes" data-turnstile-site-key={turnstileSiteKey}>
+<header class="wish-form-heading">
+<span class="wish-form-eyebrow">Make a wish</span>
+<h2 class="wish-form-title" id="wishTitle">당신의 소원을 남겨주세요.</h2>
+<p class="wish-form-description">
+              공개를 선택한 소원은 저장되는 즉시 메인 화면의 비눗방울로 떠오릅니다.
+            </p>
+</header>
+<label class="field">
+<span class="field-label">소원 <strong aria-hidden="true">*</strong></span>
+<textarea class="wish-textarea" id="wishMessage" maxlength={MAX_WISH_LENGTH} name="message" placeholder="언젠가 꼭 이루고 싶은 것은..." required=""></textarea>
+<span class="field-meta">
+<span>개인정보는 적지 말아주세요.</span>
+<span><span id="wishCount">0</span> / {MAX_WISH_LENGTH}</span>
+</span>
+</label>
+<fieldset aria-describedby="wishVisibilityHelp" class="wish-visibility field">
+<legend class="field-label">공개 설정 <strong aria-hidden="true">*</strong></legend>
+<div class="visibility-options">
+<label class="visibility-option" id="wishPublicOption">
+<input id="wishPublic" name="visibilityPublic" type="checkbox"/>
+<span>
+<strong>공개</strong>
+<small>저장되는 즉시 비눗방울로 공개됩니다.</small>
+</span>
+</label>
+<label class="visibility-option is-selected" id="wishPrivateOption">
+<input checked="" id="wishPrivate" name="visibilityPrivate" type="checkbox"/>
+<span>
+<strong>비공개</strong>
+<small>외부에 공개하지 않고 조용히 보관합니다.</small>
+</span>
+</label>
+</div>
+<span class="visibility-help" id="wishVisibilityHelp">공개와 비공개 중 하나를 선택해 주세요.</span>
+</fieldset>
+<button class="wish-submit" type="submit">소원 띄우기</button>
+<p class="form-error" id="wishFormError" role="alert" aria-live="polite"></p>
+        </form>
+</article>
+<div aria-hidden="true" class="envelope-base"></div>
+<div aria-hidden="true" class="envelope-fold"></div>
+</div>
+</div>
+
+<div aria-hidden="true" aria-labelledby="wishSuccessTitle" aria-describedby="wishSuccessMessage" aria-modal="true" class="modal wish-success-modal" id="wishSuccessModal" inert role="alertdialog">
+<button aria-label="완료 알림 닫기" class="modal-backdrop" tabindex="-1" type="button"></button>
+<div class="letter-scene wish-success-scene">
+<article class="letter-paper wish-success-dialog" tabindex="-1">
+<button aria-label="완료 알림 닫기" class="letter-close" id="wishSuccessClose" type="button">✕</button>
+<div class="wish-success-content">
+<div aria-hidden="true" class="wish-success-symbol">○</div>
+<h2 class="wish-success-title" id="wishSuccessTitle">당신의 소원을 잘 받았어요.</h2>
+<p id="wishSuccessMessage">소원이 안전하게 접수되었습니다.</p>
+<button class="wish-success-confirm" id="wishSuccessConfirm" type="button">확인</button>
+</div>
+</article>
+</div>
+</div>
+
+<div aria-live="polite" class="toast" id="toast" role="status"></div>
+    <script>import "../lib/intro-failsafe";</script>
+    <script>import "../lib/main";</script>
+  </body>
+</html>

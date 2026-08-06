@@ -1,0 +1,788 @@
+---
+import "../styles/global.css";
+import { verifyAdminRequest } from "../server/admin-auth";
+import { adminEnvironment } from "../server/admin-environment";
+import {
+  ensureAdminCsrfProtection,
+  ADMIN_CSRF_FIELD,
+} from "../server/security/csrf";
+import {
+  listPublicWishes,
+  type AdminWish,
+} from "../server/admin-wishes";
+import {
+  getProductCatalogNotices,
+  listAdminProducts,
+  type AdminProduct,
+} from "../server/products";
+import {
+  DEFAULT_PRODUCT_NOTICES,
+  type ProductCatalogNotices,
+} from "../lib/product-defaults";
+
+export const prerender = false;
+
+const environment = adminEnvironment();
+const auth = verifyAdminRequest(Astro.request, environment);
+const databaseEnvironment = environment;
+
+let csrfToken = "";
+if (auth.configured) {
+  const csrf = ensureAdminCsrfProtection(Astro.request, environment);
+  csrfToken = csrf.token;
+  if (csrf.cookieHeader) {
+    Astro.response.headers.append("set-cookie", csrf.cookieHeader);
+  }
+}
+
+let publicWishes: readonly AdminWish[] = [];
+let products: readonly AdminProduct[] = [];
+let productNotices: ProductCatalogNotices = DEFAULT_PRODUCT_NOTICES;
+let wishLoadError = "";
+let productLoadError = "";
+
+Astro.response.headers.set("cache-control", "no-store");
+Astro.response.headers.set("x-robots-tag", "noindex, nofollow, noarchive");
+
+if (auth.configured && auth.authorized) {
+  try {
+    publicWishes = await listPublicWishes(databaseEnvironment);
+  } catch (error) {
+    console.error("Admin wish dashboard load failed", error);
+    wishLoadError =
+      "소원 목록을 불러오지 못했습니다. Supabase 환경변수와 wishes 테이블을 확인해 주세요.";
+  }
+  try {
+    [products, productNotices] = await Promise.all([
+      listAdminProducts(databaseEnvironment),
+      getProductCatalogNotices(databaseEnvironment),
+    ]);
+  } catch (error) {
+    console.error("Admin product dashboard load failed", error);
+    productLoadError =
+      "상품 목록을 불러오지 못했습니다. 202607180001_create_products.sql 마이그레이션을 먼저 적용해 주세요.";
+  }
+}
+
+const result = Astro.url.searchParams.get("result");
+const resultMessages: Record<string, string> = {
+  "wish-hidden": "소원을 비공개로 전환했습니다.",
+  "product-created": "상품을 추가했습니다.",
+  "product-updated": "상품 정보를 수정했습니다.",
+  "product-deleted": "상품을 삭제했습니다.",
+  "product-notices-updated": "상품 공통 안내를 수정했습니다.",
+  "logged-in": "관리자 로그인에 성공했습니다.",
+  "logged-out": "로그아웃했습니다.",
+};
+const notice = result ? resultMessages[result] ?? "" : "";
+
+const errorCode = Astro.url.searchParams.get("error");
+const errorMessages: Record<string, string> = {
+  forbidden: "허용되지 않은 요청입니다. 관리자 페이지에서 다시 시도해 주세요.",
+  "not-configured": "관리자 인증 환경변수가 안전하게 설정되지 않았습니다.",
+  "invalid-request": "요청 형식이 올바르지 않습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.",
+  "csrf-failed": "보안 토큰이 만료되었거나 올바르지 않습니다. 페이지를 새로고침해 주세요.",
+  "rate-limited": "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+  "invalid-credentials": "사용자 이름 또는 비밀번호가 올바르지 않습니다.",
+  "session-expired": "로그인이 만료되었거나 인증 정보가 없습니다. 다시 로그인해 주세요.",
+  "invalid-wish-id": "잘못된 소원 ID입니다.",
+  "invalid-wish-action": "잘못된 소원 관리 작업입니다.",
+  "invalid-wish-note": "비공개 전환 사유는 200자 이하여야 합니다.",
+  "wish-action-failed": "소원 상태를 변경하지 못했습니다.",
+  "product-action-failed": "상품 작업을 완료하지 못했습니다. 입력값과 이미지 파일을 확인해 주세요.",
+};
+const errorMessage = errorCode
+  ? errorMessages[errorCode] ?? "관리자 작업을 처리하지 못했습니다."
+  : "";
+
+const formatDate = (value: string | null): string => {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+};
+
+const formatPrice = (value: number): string =>
+  new Intl.NumberFormat("ko-KR", {
+    style: "currency",
+    currency: "KRW",
+    maximumFractionDigits: 0,
+  }).format(value);
+---
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>HOPE 관리자</title>
+  </head>
+  <body class="admin-body">
+    <main class="admin-shell">
+      {!auth.configured ? (
+        <section class="admin-auth-card admin-state">
+          <p class="admin-eyebrow">HOPE ADMIN</p>
+          <h1>관리자 환경변수가 필요합니다.</h1>
+          <pre>ADMIN_USERNAME=hope-admin
+ADMIN_PASSWORD=12자 이상의 강력한 비밀번호
+ADMIN_SESSION_SECRET=32자 이상의 별도 무작위 비밀값</pre>
+        </section>
+      ) : !auth.authorized ? (
+        <section class="admin-auth-card admin-state">
+          <div class="admin-auth-copy">
+            <p class="admin-eyebrow">HOPE ADMIN</p>
+            <h1>운영자 로그인</h1>
+            <p class="admin-auth-description">
+              공개 중인 소원을 비공개로 전환하고 상품 정보를 관리할 수 있습니다.
+            </p>
+          </div>
+
+          {notice && <p class="admin-notice">{notice}</p>}
+          {errorMessage && <p class="admin-error">{errorMessage}</p>}
+
+          <form action="/api/admin/session" class="admin-login-form" method="post">
+            <input type="hidden" name="action" value="login" />
+            <input type="hidden" name={ADMIN_CSRF_FIELD} value={csrfToken} />
+            <label>
+              사용자 이름
+              <input
+                autocomplete="username"
+                inputmode="text"
+                name="username"
+                placeholder="hope-admin"
+                required
+                type="text"
+              />
+            </label>
+            <label>
+              비밀번호
+              <input
+                autocomplete="current-password"
+                name="password"
+                placeholder="비밀번호"
+                required
+                type="password"
+              />
+            </label>
+            <button class="admin-primary" type="submit">로그인</button>
+          </form>
+        </section>
+      ) : (
+        <>
+          <header class="admin-header">
+            <div>
+              <p class="admin-eyebrow">HOPE ADMIN</p>
+              <h1>운영 관리</h1>
+              <p class="admin-header-description">
+                공개 소원 관리, 상품 관리, 공통 안내 문구를 한 번에 관리합니다.
+              </p>
+            </div>
+            <div class="admin-header-actions">
+              <nav aria-label="관리자 메뉴" class="admin-nav">
+                <a href="#overview">개요</a>
+                <a href="#wishes">공개 소원</a>
+                <a href="#products">상품 관리</a>
+                <a href="/">메인으로</a>
+              </nav>
+              <form action="/api/admin/session" method="post">
+                <input type="hidden" name="action" value="logout" />
+                <input type="hidden" name={ADMIN_CSRF_FIELD} value={csrfToken} />
+                <button class="admin-secondary" type="submit">로그아웃</button>
+              </form>
+            </div>
+          </header>
+
+          {notice && <p class="admin-notice">{notice}</p>}
+          {errorMessage && <p class="admin-error">{errorMessage}</p>}
+          {wishLoadError && <p class="admin-error">{wishLoadError}</p>}
+          {productLoadError && <p class="admin-error">{productLoadError}</p>}
+
+          <section class="admin-overview" id="overview" aria-label="관리 개요">
+            <article class="admin-stat-card">
+              <p class="admin-eyebrow">PUBLIC WISHES</p>
+              <strong>{publicWishes.length}</strong>
+              <span>현재 공개 목록</span>
+            </article>
+            <article class="admin-stat-card">
+              <p class="admin-eyebrow">PUBLISHING</p>
+              <strong>즉시</strong>
+              <span>관리자 승인 없이 공개</span>
+            </article>
+            <article class="admin-stat-card">
+              <p class="admin-eyebrow">PRODUCTS</p>
+              <strong>{products.length}</strong>
+              <span>등록 상품 수</span>
+            </article>
+          </section>
+
+          <section class="admin-section" id="wishes" aria-labelledby="publicWishesTitle">
+            <div class="admin-section-heading">
+              <div>
+                <p class="admin-eyebrow">PUBLIC WISH MANAGEMENT</p>
+                <h2 id="publicWishesTitle">공개 중인 소원</h2>
+              </div>
+              <span>{publicWishes.length}건</span>
+            </div>
+
+            <p class="admin-section-description">
+              공개로 작성된 소원은 즉시 비눗방울에 표시됩니다. 부적절한 소원은 아래에서 비공개로 전환할 수 있습니다.
+            </p>
+
+            {publicWishes.length === 0 ? (
+              <p class="admin-empty">현재 공개 중인 소원이 없습니다.</p>
+            ) : (
+              <div class="admin-list">
+                {publicWishes.map((wish) => (
+                  <article class="admin-card">
+                    <div class="admin-card-meta">
+                      <span>{wish.locale.toUpperCase()}</span>
+                      <time datetime={wish.createdAt}>{formatDate(wish.createdAt)}</time>
+                    </div>
+                    <p class="admin-message">{wish.message}</p>
+                    <form action="/api/admin/wishes" class="admin-inline-form admin-inline-form--reject" method="post">
+                      <input type="hidden" name="id" value={wish.id} />
+                      <input type="hidden" name="action" value="hide" />
+                      <input type="hidden" name={ADMIN_CSRF_FIELD} value={csrfToken} />
+                      <input maxlength="200" name="moderationNote" placeholder="비공개 전환 사유(선택)" type="text" />
+                      <button class="admin-reject" type="submit">비공개로 전환</button>
+                    </form>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section class="admin-section" id="products" aria-labelledby="productsTitle">
+            <div class="admin-section-heading">
+              <div>
+                <p class="admin-eyebrow">PRODUCT MANAGEMENT</p>
+                <h2 id="productsTitle">상품 관리</h2>
+              </div>
+              <span>{products.length}개</span>
+            </div>
+
+            <form action="/api/admin/products" class="admin-catalog-notice-form" method="post">
+              <input type="hidden" name="action" value="update-notices" />
+              <input type="hidden" name={ADMIN_CSRF_FIELD} value={csrfToken} />
+              <div>
+                <p class="admin-eyebrow">CATALOG NOTICE</p>
+                <h3>상품 공통 안내</h3>
+              </div>
+              <label>
+                기부 안내
+                <textarea name="donationNote" maxlength="1000" rows="3">{productNotices.donationNote}</textarea>
+              </label>
+              <label>
+                구매 및 문의 안내
+                <textarea name="inquiryNote" maxlength="1000" rows="3">{productNotices.inquiryNote}</textarea>
+              </label>
+              <button class="admin-primary" type="submit">공통 안내 저장</button>
+            </form>
+
+            <details class="admin-product-create" open={products.length === 0}>
+              <summary>새 상품 추가</summary>
+              <form
+                action="/api/admin/products"
+                class="admin-product-form"
+                enctype="multipart/form-data"
+                method="post"
+              >
+                <input type="hidden" name="action" value="create" />
+                <input type="hidden" name={ADMIN_CSRF_FIELD} value={csrfToken} />
+                <label>구분 <input name="badge" maxlength="30" placeholder="베이직" /></label>
+                <label>상품명 <input name="name" maxlength="100" required placeholder="볼펜" /></label>
+                <label>Slug <input name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required placeholder="basic-ballpoint" /></label>
+                <label>가격(원) <input name="priceKrw" min="0" max="100000000" required type="number" /></label>
+                <label>정렬 순서 <input name="sortOrder" min="0" max="10000" type="number" value="100" required /></label>
+                <label class="admin-field-wide">상품 이미지 <input accept="image/png,image/jpeg,image/webp" name="image" required type="file" /></label>
+                <label class="admin-field-wide">이미지 대체 문구 <input name="altText" maxlength="300" /></label>
+                <label class="admin-field-wide">상품 설명 <textarea name="description" maxlength="1000" rows="3"></textarea></label>
+                <label class="admin-check admin-field-wide"><input checked name="isPublished" type="checkbox" /> 홈페이지에 공개</label>
+                <button class="admin-primary admin-field-wide" type="submit">상품 추가</button>
+              </form>
+            </details>
+
+            <div class="admin-product-list">
+              {products.map((product) => (
+                <details class="admin-product-editor">
+                  <summary>
+                    <img alt="" src={product.imageUrl} />
+                    <span>
+                      <strong>[{product.badge}] {product.name}</strong>
+                      <small>{formatPrice(product.priceKrw)} · {product.isPublished ? "공개" : "비공개"}</small>
+                    </span>
+                  </summary>
+                  <form
+                    action="/api/admin/products"
+                    class="admin-product-form"
+                    enctype="multipart/form-data"
+                    method="post"
+                  >
+                    <input type="hidden" name="action" value="update" />
+                    <input type="hidden" name={ADMIN_CSRF_FIELD} value={csrfToken} />
+                    <input type="hidden" name="id" value={product.id} />
+                    <input type="hidden" name="currentImageUrl" value={product.imageUrl} />
+                    <label>구분 <input name="badge" maxlength="30" value={product.badge} /></label>
+                    <label>상품명 <input name="name" maxlength="100" required value={product.name} /></label>
+                    <label>Slug <input name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required value={product.slug} /></label>
+                    <label>가격(원) <input name="priceKrw" min="0" max="100000000" required type="number" value={product.priceKrw} /></label>
+                    <label>정렬 순서 <input name="sortOrder" min="0" max="10000" required type="number" value={product.sortOrder} /></label>
+                    <label class="admin-field-wide">이미지 교체 <input accept="image/png,image/jpeg,image/webp" name="image" type="file" /></label>
+                    <label class="admin-field-wide">현재 이미지 URL <input name="imageUrl" value={product.imageUrl} /></label>
+                    <label class="admin-field-wide">이미지 대체 문구 <input name="altText" maxlength="300" value={product.altText} /></label>
+                    <label class="admin-field-wide">상품 설명 <textarea name="description" maxlength="1000" rows="3">{product.description}</textarea></label>
+                    <label class="admin-check admin-field-wide"><input checked={product.isPublished} name="isPublished" type="checkbox" /> 홈페이지에 공개</label>
+                    <div class="admin-product-actions admin-field-wide">
+                      <button class="admin-primary" type="submit">수정 저장</button>
+                    </div>
+                  </form>
+                  <form action="/api/admin/products" class="admin-delete-form" method="post">
+                    <input type="hidden" name="action" value="delete" />
+                    <input type="hidden" name={ADMIN_CSRF_FIELD} value={csrfToken} />
+                    <input type="hidden" name="id" value={product.id} />
+                    <button class="admin-reject" type="submit">상품 삭제</button>
+                  </form>
+                </details>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+    </main>
+  </body>
+</html>
+
+<style>
+  :global(html) {
+    height: auto !important;
+    min-height: 100%;
+    overflow-y: auto !important;
+    background: #f2f0ea;
+  }
+
+  :global(.admin-body) {
+    min-height: 100vh;
+    margin: 0;
+    background: #f2f0ea;
+    color: #111817;
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  .admin-shell {
+    width: min(1180px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 28px 0 96px;
+  }
+
+  .admin-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 24px;
+    padding: 18px 0 22px;
+    background: linear-gradient(180deg, rgba(242, 240, 234, 0.98), rgba(242, 240, 234, 0.92));
+    backdrop-filter: blur(8px);
+  }
+
+  .admin-header-actions {
+    display: grid;
+    gap: 12px;
+    justify-items: end;
+  }
+
+  .admin-header h1,
+  .admin-section h2,
+  .admin-state h1 {
+    margin: 0;
+    font-weight: 650;
+    letter-spacing: -0.04em;
+  }
+
+  .admin-header h1 {
+    font-size: clamp(32px, 5vw, 56px);
+  }
+
+  .admin-header-description,
+  .admin-auth-description {
+    margin: 10px 0 0;
+    color: #5a6561;
+    line-height: 1.65;
+  }
+
+  .admin-eyebrow {
+    margin: 0 0 8px;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #59635f;
+  }
+
+  .admin-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .admin-nav a,
+  .admin-secondary {
+    border: 1px solid #c7cbc6;
+    border-radius: 999px;
+    padding: 9px 13px;
+    color: inherit;
+    text-decoration: none;
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.7);
+  }
+
+  .admin-overview {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .admin-stat-card,
+  .admin-state,
+  .admin-section {
+    border: 1px solid #d3d4cf;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.84);
+    box-shadow: 0 18px 60px rgba(25, 31, 29, 0.06);
+  }
+
+  .admin-stat-card {
+    padding: 20px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .admin-stat-card strong {
+    font-size: clamp(28px, 4vw, 44px);
+    letter-spacing: -0.04em;
+  }
+
+  .admin-stat-card span {
+    color: #5c6662;
+    font-size: 14px;
+  }
+
+  .admin-state {
+    margin-top: min(10vh, 72px);
+    padding: clamp(28px, 6vw, 64px);
+  }
+
+  .admin-auth-card {
+    max-width: 620px;
+  }
+
+  .admin-state pre {
+    overflow: auto;
+    padding: 16px;
+    border-radius: 12px;
+    background: #111817;
+    color: #fff;
+  }
+
+  .admin-login-form {
+    display: grid;
+    gap: 16px;
+    margin-top: 22px;
+  }
+
+  .admin-login-form label,
+  .admin-catalog-notice-form label,
+  .admin-product-form label {
+    display: grid;
+    gap: 7px;
+    font-size: 12px;
+    color: #535d59;
+  }
+
+  .admin-login-form input,
+  .admin-catalog-notice-form textarea,
+  .admin-product-form input,
+  .admin-product-form textarea,
+  .admin-inline-form--reject input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #cfd3ce;
+    border-radius: 12px;
+    padding: 11px 12px;
+    background: #fbfbf9;
+    color: #111817;
+    font: inherit;
+    font-size: 14px;
+  }
+
+  .admin-product-form textarea,
+  .admin-catalog-notice-form textarea {
+    resize: vertical;
+    line-height: 1.55;
+  }
+
+  .admin-section {
+    margin-top: 20px;
+    padding: clamp(20px, 4vw, 36px);
+    scroll-margin-top: 104px;
+  }
+
+  .admin-section-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .admin-section-heading h2 {
+    font-size: clamp(24px, 4vw, 38px);
+  }
+
+  .admin-section-heading > span {
+    color: #59635f;
+  }
+
+  .admin-notice,
+  .admin-error {
+    margin: 0 0 16px;
+    padding: 13px 16px;
+    border-radius: 12px;
+  }
+
+  .admin-notice {
+    background: #dff1e9;
+  }
+
+  .admin-error {
+    background: #ffe1dd;
+    color: #8e241a;
+  }
+
+  .admin-section-description {
+    margin: -4px 0 18px;
+    color: #59635f;
+    line-height: 1.65;
+  }
+
+  .admin-empty {
+    margin: 0;
+    color: #69736f;
+  }
+
+  .admin-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .admin-card {
+    border: 1px solid #d8dad6;
+    border-radius: 16px;
+    padding: 18px;
+    background: #fff;
+  }
+
+  .admin-card-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: #6a736f;
+    font-size: 12px;
+  }
+
+  .admin-message {
+    margin: 16px 0;
+    font-size: 17px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+
+  .admin-actions,
+  .admin-product-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .admin-inline-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .admin-inline-form--reject {
+    flex: 1 1 280px;
+  }
+
+  button {
+    font: inherit;
+  }
+
+  .admin-approve,
+  .admin-reject,
+  .admin-primary {
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 18px;
+    cursor: pointer;
+  }
+
+  .admin-approve,
+  .admin-primary {
+    background: #17201d;
+    color: #fff;
+  }
+
+  .admin-reject {
+    background: #eee9e5;
+    color: #722b25;
+  }
+
+  .admin-catalog-notice-form {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 14px;
+    padding: 18px;
+    border: 1px solid #d8dad6;
+    border-radius: 16px;
+    background: #fff;
+  }
+
+  .admin-catalog-notice-form h3 {
+    margin: 0;
+    font-size: 20px;
+  }
+
+  .admin-catalog-notice-form button {
+    justify-self: start;
+  }
+
+  .admin-product-create,
+  .admin-product-editor {
+    border: 1px solid #d8dad6;
+    border-radius: 16px;
+    background: #fff;
+    overflow: clip;
+  }
+
+  .admin-product-create {
+    margin-bottom: 14px;
+  }
+
+  .admin-product-create > summary,
+  .admin-product-editor > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 18px;
+    font-weight: 650;
+  }
+
+  .admin-product-create > summary::-webkit-details-marker,
+  .admin-product-editor > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .admin-product-editor > summary {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .admin-product-editor > summary img {
+    width: 68px;
+    height: 68px;
+    object-fit: cover;
+    border-radius: 12px;
+    background: #eee;
+  }
+
+  .admin-product-editor > summary span {
+    display: grid;
+    gap: 5px;
+  }
+
+  .admin-product-editor > summary small {
+    color: #68716d;
+    font-weight: 450;
+  }
+
+  .admin-product-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .admin-product-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    padding: 0 18px 18px;
+  }
+
+  .admin-field-wide {
+    grid-column: 1 / -1;
+  }
+
+  .admin-check {
+    display: flex !important;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+  }
+
+  .admin-check input {
+    width: auto;
+  }
+
+  .admin-delete-form {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 18px 18px;
+  }
+
+  @media (max-width: 860px) {
+    .admin-overview {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .admin-shell {
+      width: min(100% - 20px, 1180px);
+      padding-top: 20px;
+    }
+
+    .admin-header {
+      position: static;
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .admin-header-actions,
+    .admin-nav {
+      justify-items: start;
+      justify-content: flex-start;
+    }
+
+    .admin-product-form {
+      grid-template-columns: 1fr;
+    }
+
+    .admin-field-wide {
+      grid-column: auto;
+    }
+
+    .admin-inline-form,
+    .admin-inline-form--reject {
+      width: 100%;
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+</style>
