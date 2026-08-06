@@ -1,0 +1,27 @@
+{
+  "name": "@hope/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "lint": "astro check",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/vercel": "11.0.3",
+    "@hope/wishes-domain": "workspace:*",
+    "@hope/wishes-infrastructure": "workspace:*",
+    "astro": "7.1.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.6",
+    "@hope/tsconfig": "workspace:*",
+    "@types/node": "26.1.1",
+    "typescript": "5.8.3",
+    "vitest": "4.1.10"
+  }
+}
