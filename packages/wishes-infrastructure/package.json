@@ -1,0 +1,26 @@
+{
+  "name": "@hope/wishes-infrastructure",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings=0",
+    "test": "vitest run --exclude src/atomic-submission.integration.test.ts",
+    "test:integration": "vitest run src/atomic-submission.integration.test.ts"
+  },
+  "dependencies": {
+    "@hope/wishes-domain": "workspace:*",
+    "@supabase/supabase-js": "2.110.7"
+  },
+  "devDependencies": {
+    "@hope/tsconfig": "workspace:*",
+    "@types/node": "26.1.1",
+    "typescript": "5.8.3",
+    "vitest": "4.1.10"
+  }
+}
