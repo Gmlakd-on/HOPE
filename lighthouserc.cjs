@@ -1,15 +1,30 @@
+const { join } = require("node:path");
+const { tmpdir } = require("node:os");
 const formFactor = process.env.LHCI_FORM_FACTOR === "mobile" ? "mobile" : "desktop";
-const baseUrl = (process.env.LHCI_BASE_URL || "http://127.0.0.1:4321").replace(/\/$/, "");
-const usesExternalServer = Boolean(process.env.LHCI_BASE_URL);
+const rawBaseUrl = process.env.LHCI_BASE_URL?.trim();
+const chromePath = process.env.CHROME_PATH?.trim();
 
+if (!rawBaseUrl) {
+  throw new Error("LHCI_BASE_URL is required.");
+}
+
+if (!chromePath) {
+  throw new Error("CHROME_PATH is required.");
+}
+
+const parsedBaseUrl = new URL(rawBaseUrl);
+if (parsedBaseUrl.protocol !== "https:") {
+  throw new Error("LHCI_BASE_URL must use HTTPS.");
+}
+if (parsedBaseUrl.username || parsedBaseUrl.password || parsedBaseUrl.search || parsedBaseUrl.hash) {
+  throw new Error("LHCI_BASE_URL must not contain credentials, a query string, or a fragment.");
+}
+
+const baseUrl = parsedBaseUrl.origin;
 const settings = {
   throttlingMethod: "simulate",
-  onlyCategories: [
-    "performance",
-    "accessibility",
-    "best-practices",
-    "seo",
-  ],
+  disableStorageReset: true,
+  onlyCategories: ["performance", "accessibility", "best-practices", "seo"],
   chromeFlags: "--no-sandbox --disable-dev-shm-usage",
 };
 
@@ -29,15 +44,14 @@ if (formFactor === "desktop") {
 module.exports = {
   ci: {
     collect: {
-      ...(!usesExternalServer
-        ? {
-            startServerCommand:
-              "pnpm --filter @hope/web preview --host 127.0.0.1 --port 4321",
-            startServerReadyPattern: "Local",
-          }
-        : {}),
       url: [`${baseUrl}/`],
       numberOfRuns: 3,
+      puppeteerScript: "scripts/lighthouse-auth.cjs",
+      puppeteerLaunchOptions: {
+        executablePath: chromePath,
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+      },
       settings,
     },
     assert: {
@@ -52,6 +66,9 @@ module.exports = {
         "total-blocking-time": ["error", { maxNumericValue: 200 }],
       },
     },
-    upload: { target: "temporary-public-storage" },
+    upload: {
+      target: "filesystem",
+      outputDir: join(tmpdir(), "hope-lighthouse", formFactor),
+    },
   },
 };

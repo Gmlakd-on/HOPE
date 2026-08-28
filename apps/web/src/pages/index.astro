@@ -34,6 +34,14 @@ const productCards = products.map((product) => ({
   product,
   image: productImageAttributes(product.imageUrl, "card"),
 }));
+const initialProduct = products[0];
+if (!initialProduct) {
+  throw new Error("DEFAULT_PRODUCTS must contain at least one product.");
+}
+const initialProductModalImage = productImageAttributes(
+  initialProduct.imageUrl,
+  "modal",
+);
 ---
 <!doctype html>
 <html lang="ko">
@@ -247,7 +255,7 @@ const productCards = products.map((product) => ({
 </main>
 <footer class="site-footer">
 <span class="footer-copyright">© 2026 {SITE_BRAND}</span>
-<span aria-label={`${SITE_BRAND} 연락처`} class="footer-contact" role="group">
+<div aria-label={`${SITE_BRAND} 연락처`} class="footer-contact" role="group">
 <a aria-label={`${SITE_BRAND} Instagram 열기`} class="footer-icon-link" href={instagramUrl} rel="noopener noreferrer" target="_blank" title="Instagram">
 <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
 <rect height="17" rx="5" stroke="currentColor" stroke-width="1.5" width="17" x="3.5" y="3.5"></rect>
@@ -255,7 +263,7 @@ const productCards = products.map((product) => ({
 <circle cx="17.4" cy="6.8" fill="currentColor" r="1"></circle>
 </svg>
 </a>
-<span class="footer-email-wrap">
+<div class="footer-email-wrap">
 <button
   aria-controls="footerEmailPopover"
   aria-expanded="false"
@@ -287,8 +295,8 @@ const productCards = products.map((product) => ({
 </button>
 <span aria-live="polite" class="visually-hidden" id="footerEmailCopyStatus"></span>
 </div>
-</span>
-</span>
+</div>
+</div>
 </footer>
 </div>
 
@@ -318,13 +326,25 @@ const productCards = products.map((product) => ({
 <article class="letter-paper product-dialog" tabindex="-1">
 <button aria-label="상품 상세 닫기" class="letter-close" id="productClose" type="button">✕</button>
 <div class="product-dialog-media">
-<img alt="" decoding="async" id="productModalImage" src="" />
+<img
+  alt={initialProduct.altText}
+  decoding="async"
+  height={initialProductModalImage.height}
+  id="productModalImage"
+  loading="lazy"
+  sizes={initialProductModalImage.sizes}
+  src={initialProductModalImage.src}
+  srcset={initialProductModalImage.srcSet}
+  width={initialProductModalImage.width}
+/>
 </div>
 <div class="product-dialog-copy">
-<p class="product-modal-badge" id="productModalBadge"></p>
-<h2 class="product-modal-name" id="productModalName"></h2>
-<p class="product-modal-price" id="productModalPrice"></p>
-<p class="product-modal-description" id="productModalDescription"></p>
+<p class="product-modal-badge" id="productModalBadge">[{initialProduct.badge}]</p>
+<h2 class="product-modal-name" id="productModalName">{initialProduct.name}</h2>
+<p class="product-modal-price" id="productModalPrice">
+  {new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(initialProduct.priceKrw)}
+</p>
+<p class="product-modal-description" id="productModalDescription">{initialProduct.description}</p>
 <div class="product-modal-note">
 <strong id="productDonationTitle">기부 안내</strong>
 <p id="productCatalogDonation">{DEFAULT_PRODUCT_NOTICES.donationNote}</p>

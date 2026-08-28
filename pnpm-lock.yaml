@@ -42,6 +42,9 @@ importers:
       prettier:
         specifier: 3.9.5
         version: 3.9.5
+      puppeteer:
+        specifier: npm:puppeteer-core@24.43.1
+        version: puppeteer-core@24.43.1
       turbo:
         specifier: 2.10.5
         version: 2.10.5
