@@ -3,6 +3,7 @@ import type {
   ProductViewModel,
 } from "../lib/product-defaults";
 import {
+  fetchSupabase,
   readSupabaseError,
   resolveSupabaseRestConfig,
   supabaseHeaders,
@@ -95,7 +96,7 @@ async function listProducts(
   if (publishedOnly) url.searchParams.set("is_published", "eq.true");
   url.searchParams.set("order", "sort_order.asc,created_at.asc");
 
-  const response = await fetch(url, {
+  const response = await fetchSupabase(url, {
     headers: supabaseHeaders(config),
     cache: "no-store",
   });
@@ -126,7 +127,7 @@ export async function getProductCatalogNotices(
   url.searchParams.set("id", "eq.1");
   url.searchParams.set("limit", "1");
 
-  const response = await fetch(url, {
+  const response = await fetchSupabase(url, {
     headers: supabaseHeaders(config),
     cache: "no-store",
   });
@@ -153,7 +154,7 @@ export async function updateProductCatalogNotices(
   const url = supabaseRestUrl(config, "product_catalog_settings");
   url.searchParams.set("id", "eq.1");
 
-  const response = await fetch(url, {
+  const response = await fetchSupabase(url, {
     method: "PATCH",
     headers: supabaseHeaders(config, {
       "content-type": "application/json",
@@ -180,7 +181,7 @@ export async function createProduct(
   input: ProductWriteInput,
 ): Promise<void> {
   const config = resolveSupabaseRestConfig(environment);
-  const response = await fetch(supabaseRestUrl(config, "products"), {
+  const response = await fetchSupabase(supabaseRestUrl(config, "products"), {
     method: "POST",
     headers: supabaseHeaders(config, {
       "content-type": "application/json",
@@ -201,7 +202,7 @@ export async function updateProduct(
   const config = resolveSupabaseRestConfig(environment);
   const url = supabaseRestUrl(config, "products");
   url.searchParams.set("id", `eq.${input.id}`);
-  const response = await fetch(url, {
+  const response = await fetchSupabase(url, {
     method: "PATCH",
     headers: supabaseHeaders(config, {
       "content-type": "application/json",
@@ -224,7 +225,7 @@ export async function deleteProduct(
   const config = resolveSupabaseRestConfig(environment);
   const url = supabaseRestUrl(config, "products");
   url.searchParams.set("id", `eq.${id}`);
-  const response = await fetch(url, {
+  const response = await fetchSupabase(url, {
     method: "DELETE",
     headers: supabaseHeaders(config, { prefer: "return=representation" }),
     cache: "no-store",
@@ -473,7 +474,7 @@ export async function uploadProductImage(
     `/storage/v1/object/product-images/${encodeStoragePath(objectPath)}`,
     `${config.url}/`,
   );
-  const response = await fetch(uploadUrl, {
+  const response = await fetchSupabase(uploadUrl, {
     method: "POST",
     headers: supabaseHeaders(config, {
       "content-type": detected.mimeType,
