@@ -17,25 +17,30 @@ env:
 
 jobs:
   quality:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 22
+
       - name: Enable pinned pnpm
         run: |
           corepack enable
           corepack prepare pnpm@${PNPM_VERSION} --activate
+
       - run: pnpm install --frozen-lockfile
+
       - run: pnpm run ci
 
   database-security:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 15
+
     services:
       postgres:
         image: postgres:16.9-alpine
@@ -50,51 +55,67 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+
     env:
       TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/hope_test
+
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 22
+
       - name: Enable pinned pnpm
         run: |
           corepack enable
           corepack prepare pnpm@${PNPM_VERSION} --activate
+
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends postgresql-client
+
       - run: pnpm install --frozen-lockfile
+
       - name: Apply database roles and migrations
         run: |
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/bootstrap.sql
           for migration in supabase/migrations/*.sql; do
             psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
+
       - name: Parallel rate-limit and RLS integration tests
         run: pnpm --filter @hope/wishes-infrastructure test:integration
 
   lighthouse:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 20
+
     strategy:
       fail-fast: false
       matrix:
         form-factor: [desktop, mobile]
+
     env:
       LHCI_FORM_FACTOR: ${{ matrix.form-factor }}
+
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 22
+
       - name: Enable pinned pnpm
         run: |
           corepack enable
           corepack prepare pnpm@${PNPM_VERSION} --activate
+
       - run: pnpm install --frozen-lockfile
+
       - run: pnpm build
+
       - run: pnpm lighthouse
