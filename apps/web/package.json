@@ -12,7 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@astrojs/vercel": "11.0.3",
+    "@astrojs/vercel": "11.0.8",
     "@hope/wishes-domain": "workspace:*",
     "@hope/wishes-infrastructure": "workspace:*",
     "astro": "7.1.0"
